@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PayPal Link Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      max-width: 400px;
+      text-align: center;
+    }
+    input {
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+    button {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    a {
+      color: #4ade80;
+      word-break: break-word;
+    }
+    .message {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>PayPal Link Generator</h2>
+    <input type="text" id="accountId" placeholder="Enter Facebook Account ID"/>
+    <button onclick="generateLink()">Generate PayPal Link</button>
+    <div class="message" id="message"></div>
+  </div>
+
+  <script>
+    function generateLink() {
+      const id = document.getElementById('accountId').value.trim();
+      const msg = document.getElementById('message');
+      msg.innerHTML = "⏳ Please wait...";
+      if (!id) {
+        msg.innerHTML = "❌ Please enter a valid account ID.";
+        return;
+      }
+
+      fetch('/api/generate?account_id=' + id)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            msg.innerHTML = '✅ Link created successfully!<br><a href="' + data.paypal_url + '" target="_blank">🔗 Click to open PayPal</a>';
+          } else {
+            msg.innerHTML = '❌ Failed: ' + (data.message || "Unknown error.");
+          }
+        })
+        .catch(err => {
+          msg.innerHTML = '❌ Error: ' + err.message;
+        });
+    }
+  </script>
+</body>
+</html>
