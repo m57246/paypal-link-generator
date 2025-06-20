@@ -1,8 +1,8 @@
 
 import fetch from 'node-fetch';
 
-const CLIENT_ID = 'AYCxncw90LWZYzcWnmTpPvGBvItsP1vyDJfnwSUMB1g-hcFxD8pkScTXkDiR-3svJN7QhKJmSUHOfTCb';
-const CLIENT_SECRET = 'EAf2aCgQTEEL0FR7HoxDoseSRFBXsa-qFB7VIbD9jYpZIQL_DsMmH_Oh5VSvlcy0njKNG2moTtbEHJ3I';
+const CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
+const CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
 
 export default async function handler(req, res) {
   const { account_id } = req.query;
@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Get Access Token from PayPal
+    // Get Access Token from PayPal
     const auth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
     const tokenRes = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
       method: 'POST',
@@ -24,12 +24,12 @@ export default async function handler(req, res) {
 
     const tokenData = await tokenRes.json();
     if (!tokenData.access_token) {
-      return res.status(500).json({ success: false, message: "Failed to get PayPal token" });
+      return res.status(500).json({ success: false, message: "Failed to get PayPal token", error: tokenData });
     }
 
     const accessToken = tokenData.access_token;
 
-    // 2. Create PayPal Order
+    // Create PayPal Order
     const orderRes = await fetch('https://api-m.sandbox.paypal.com/v2/checkout/orders', {
       method: 'POST',
       headers: {
@@ -46,15 +46,16 @@ export default async function handler(req, res) {
           custom_id: account_id
         }],
         application_context: {
-          return_url: "https://paypal.com",
-          cancel_url: "https://paypal.com"
+          return_url: "https://your-vercel-project.vercel.app/success",
+          cancel_url: "https://your-vercel-project.vercel.app/cancel"
         }
       })
     });
 
     const orderData = await orderRes.json();
-    const approvalLink = orderData.links?.find(link => link.rel === "approve")?.href;
+    console.log("PayPal Order Response:", orderData);
 
+    const approvalLink = orderData.links?.find(link => link.rel === "approve")?.href;
     if (!approvalLink) {
       return res.status(500).json({ success: false, message: "Failed to create PayPal order", data: orderData });
     }
@@ -62,6 +63,6 @@ export default async function handler(req, res) {
     res.status(200).json({ success: true, paypal_url: approvalLink });
 
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error", error: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong", error: error.message });
   }
 }
