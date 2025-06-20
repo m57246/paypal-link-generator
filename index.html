@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PayPal Link Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f1624; color: white; display: flex; flex-direction: column; align-items: center; padding-top: 100px; }
+    h1 { margin-bottom: 20px; }
+    input, button { padding: 10px; margin: 10px; font-size: 18px; border-radius: 5px; border: none; }
+    input { width: 280px; }
+    button { background: #00c48c; color: white; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #009e70; }
+    #error { color: #ff4c4c; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>PayPal Link Generator</h1>
+  <input type="text" id="accountId" placeholder="Enter Account ID" />
+  <br>
+  <button onclick="generateLink()">Generate Link</button>
+  <div id="error"></div>
+
+  <script>
+    function generateLink() {
+      const id = document.getElementById("accountId").value;
+      document.getElementById("error").innerText = "";
+      fetch(`/api/generate?account_id=${id}`)
+        .then(async (res) => {
+          const type = res.headers.get("content-type");
+          if (type && type.includes("application/json")) {
+            const data = await res.json();
+            if (data.success) {
+              window.location.href = data.paypal_url;
+            } else {
+              document.getElementById("error").innerText = "❌ " + data.message;
+            }
+          } else {
+            const text = await res.text();
+            document.getElementById("error").innerText = "❌ Server error: " + text;
+          }
+        })
+        .catch(err => {
+          document.getElementById("error").innerText = "❌ Fetch failed: " + err.message;
+        });
+    }
+  </script>
+</body>
+</html>
